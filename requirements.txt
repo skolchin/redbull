@@ -1,0 +1,12 @@
+--extra-index-url https://pypi.ngc.nvidia.com
+ultralytics
+ipykernel
+opencv-python
+tqdm
+numpy
+Pillow
+# huggingface_hub
+# segmentation_models_pytorch
+segment_anything @ git+https://github.com/facebookresearch/segment-anything.git
+clip @ git+https://github.com/mlfoundations/open_clip.git
+

@@ -1,0 +1,8 @@
+.venv/
+.vscode/
+__pycache__
+*.pt
+*.pth
+datasets/
+input/video1.mp4
+output/video1_yolo.mp4
