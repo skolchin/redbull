@@ -17,8 +17,11 @@ class Model(ABC, Generic[ResultsT]):
     DEFAULT_ARGS: Dict[str, Any] = {}
     """ Default arguments for actual model or models """
 
-    MODEL_ARGS: Set[str] = set()
+    INCLUDE_ARGS: Set[str] = set()
     """ Keys to include when model_args are prepared (empty - all keys) """
+
+    EXCLUDE_ARGS: Set[str] = set()
+    """ Keys to exclude when model_args are prepared """
 
     NEEDS_PILLOW: bool = False
     """ True if model expects PIL Image, False - numpy arrays """
@@ -28,11 +31,14 @@ class Model(ABC, Generic[ResultsT]):
         self._args: Dict[str, Any] = self.DEFAULT_ARGS.copy()
         self._model_args: Dict[str, Any] = {}
 
+        include_args = self.INCLUDE_ARGS.copy() or set(self._args.keys())
+        exclude_args = self.EXCLUDE_ARGS.copy() or set()
+
         for k, v in (args or {}).items():
             assert k in self._args, f'Unknown model argument: {k}'
             self._args[k] = type(self._args[k])(v)
 
-            if k in self.MODEL_ARGS or not self.MODEL_ARGS:
+            if k in include_args and not k in exclude_args:
                 self._model_args[k] = self._args[k]
 
     @abstractmethod
@@ -46,17 +52,17 @@ class Model(ABC, Generic[ResultsT]):
         ...
 
     @abstractmethod
-    def count_bottles(self, image: ImageT, anns: List[ResultsT]) -> int:
-        """" Count bottles from recognition results """
+    def count_objects(self, image: ImageT, anns: List[ResultsT]) -> int:
+        """" Count objects from recognition results """
         ...
 
-    def _show_bottle_count(self, image: ImageT, count: int) -> ImageT:
-        """ Draw bottle count on the image """
+    def _show_object_count(self, image: ImageT, count: int) -> ImageT:
+        """ Draw object count on the image """
         match(image):
             case np.ndarray():
                 put_text_aligned(
                     image,
-                    f'{count} bottles detected',
+                    f'{count} objects detected',
                     (10, 25),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=0.7,
@@ -71,7 +77,7 @@ class Model(ABC, Generic[ResultsT]):
                 draw = ImageDraw.Draw(image)
                 draw.text(
                     (10,20), 
-                    f'{count} bottles detected',
+                    f'{count} objects detected',
                     fill=(255,0,0),
                     font_size=20,
                 )
@@ -84,7 +90,7 @@ class Model(ABC, Generic[ResultsT]):
         for a in anns:
             image_copy = self.draw(image_copy, a)
 
-        count = self.count_bottles(image, anns)
-        image_copy = self._show_bottle_count(image_copy, count)
+        count = self.count_objects(image, anns)
+        image_copy = self._show_object_count(image_copy, count)
 
         return image_copy

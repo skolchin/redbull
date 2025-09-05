@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from ultralytics import YOLO
 from ultralytics.engine.results import Results as YoloResults
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 
 from lib.base import Model, ImageT
 
@@ -17,13 +17,20 @@ class YoloModel(Model, YoloResults):
         'agnostic_nms': True,
         'imgsz': 640,
         'retina_masks': False,
+        'classes': '39,42',
     }
+    EXCLUDE_ARGS: Set[str] = set(['classes'])
 
     def __init__(self, device: torch.device | str | None = 'cuda', args: Dict[str, Any] | None = None):
         args = self.DEFAULT_ARGS.copy() | (args or {})
         model = args.pop('model', self.DEFAULT_ARGS['model'])
 
         super().__init__(device, args)
+
+        if (classes := self._args.get('classes', None)):
+            self._classes = [int(x.strip()) for x in classes.split(',')]
+        else:
+            self._classes = None
 
         if model:
             self._model = YOLO(model)
@@ -35,7 +42,7 @@ class YoloModel(Model, YoloResults):
     def predict(self, image: ImageT):
         return self._model.predict(
             source=np.array(image),
-            classes=[39,42],
+            classes=self._classes,
             verbose=False,
             **self._model_args,
         )
@@ -49,5 +56,5 @@ class YoloModel(Model, YoloResults):
             masks=False,
         )
 
-    def count_bottles(self, image: ImageT, anns: List[YoloResults]) -> int:
+    def count_objects(self, image: ImageT, anns: List[YoloResults]) -> int:
         return len(anns[0]) if anns else 0  #type:ignore

@@ -69,18 +69,12 @@ class SamModel(Model, SamResultT):
         'min_mask_region_area': 500,
     }
 
-    MODEL_ARGS: Set[str] = set([
-        'points_per_side',
-        'points_per_batch',
-        'pred_iou_thresh',
-        'stability_score_thresh',
-        'stability_score_offset',
-        'box_nms_thresh',
-        'crop_n_layers',
-        'crop_nms_thresh',
-        'crop_overlap_ratio',
-        'crop_n_points_downscale_factor',
-        'min_mask_region_area',
+    EXCLUDE_ARGS: Set[str] = set([
+        'sam_checkpoint',
+        'model_type',
+        'conf',
+        'cap',
+        'iou',
     ])
 
     NEEDS_PILLOW: bool = True
@@ -110,7 +104,7 @@ class SamModel(Model, SamResultT):
 
         assert isinstance(image, Image.Image)
 
-        bottle_anns = []
+        object_anns = []
         sorted_anns = sorted(anns, key=(lambda x: x['area']), reverse=True)
         for n, ann in enumerate(sorted_anns):
             m = ann['segmentation']
@@ -134,7 +128,7 @@ class SamModel(Model, SamResultT):
                     # print(r.summary())
                     if r.summary():
                         # cv2.imshow(str(n), np.array(cropped_image))
-                        bottle_anns.append(ann)
+                        object_anns.append(ann)
                         found = True
                         break
             # if found:
@@ -143,10 +137,10 @@ class SamModel(Model, SamResultT):
         # print('Waiting for any key')
         # cv2.waitKey(0)
 
-        self._last_bottle_count = len(bottle_anns)
+        self._last_object_count = len(object_anns)
         segmentation_masks = []
 
-        for ann in bottle_anns:
+        for ann in object_anns:
             segmentation_mask_image = Image.fromarray(ann["segmentation"].astype('uint8') * 255)
             segmentation_masks.append(segmentation_mask_image)
 
@@ -159,9 +153,9 @@ class SamModel(Model, SamResultT):
             draw.bitmap((0, 0), segmentation_mask_image, fill=overlay_color)
 
         drawn_image = Image.alpha_composite(original_image.convert('RGBA'), overlay_image)
-        drawn_image = self._show_bottle_count(drawn_image, self._last_bottle_count)
+        drawn_image = self._show_object_count(drawn_image, self._last_object_count)
         return drawn_image
 
-    def count_bottles(self, image: ImageT, anns: List[SamResultT]) -> int:
-        return self._last_bottle_count
+    def count_objects(self, image: ImageT, anns: List[SamResultT]) -> int:
+        return self._last_object_count
 
