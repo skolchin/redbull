@@ -4,10 +4,13 @@ ipykernel
 opencv-python
 tqdm
 numpy
+pandas
+albumentations
+scikit-learn
 Pillow
 filetype
 # huggingface_hub
+kagglehub
 # segmentation_models_pytorch
 segment_anything @ git+https://github.com/facebookresearch/segment-anything.git
 clip @ git+https://github.com/mlfoundations/open_clip.git
-
