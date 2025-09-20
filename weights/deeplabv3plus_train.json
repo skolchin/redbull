@@ -1,0 +1,447 @@
+{
+  "train_files": [
+    "images/rgb_110721.png",
+    "images/rgb_173601.png",
+    "images/rgb_192641.png",
+    "images/rgb_200881.png",
+    "images/rgb_442241.png",
+    "images/rgb_654721.png",
+    "images/rgb_667041.png",
+    "images/rgb_723281.png"
+  ],
+  "val_files": [
+    "images/rgb_118721.png",
+    "images/rgb_676081.png"
+  ],
+  "stats": {
+    "epoch": 42,
+    "initial_lr": 0.001,
+    "final_lr": 1.0000000000000002e-06,
+    "final_score": 1.0930747985839844
+  },
+  "model": "weights/deeplabv3plus_best.pth",
+  "train_logs": [
+    {
+      "cross_entropy_loss": 1.7537457942962646,
+      "iou_score": 0.006199330557137728,
+      "accuracy": 0.5340175628662109
+    },
+    {
+      "cross_entropy_loss": 1.715545654296875,
+      "iou_score": 0.006993382703512907,
+      "accuracy": 0.49472305178642273
+    },
+    {
+      "cross_entropy_loss": 1.6952216625213623,
+      "iou_score": 0.007804641500115395,
+      "accuracy": 0.5001751780509949
+    },
+    {
+      "cross_entropy_loss": 1.676749348640442,
+      "iou_score": 0.008649373427033424,
+      "accuracy": 0.5419169664382935
+    },
+    {
+      "cross_entropy_loss": 1.674229383468628,
+      "iou_score": 0.008855404332280159,
+      "accuracy": 0.547742486000061
+    },
+    {
+      "cross_entropy_loss": 1.6531221866607666,
+      "iou_score": 0.009510887786746025,
+      "accuracy": 0.5560900568962097
+    },
+    {
+      "cross_entropy_loss": 1.6528480052947998,
+      "iou_score": 0.009709494188427925,
+      "accuracy": 0.5731655359268188
+    },
+    {
+      "cross_entropy_loss": 1.644516944885254,
+      "iou_score": 0.009984731674194336,
+      "accuracy": 0.5794404745101929
+    },
+    {
+      "cross_entropy_loss": 1.6362521648406982,
+      "iou_score": 0.010948589071631432,
+      "accuracy": 0.6239452362060547
+    },
+    {
+      "cross_entropy_loss": 1.629275918006897,
+      "iou_score": 0.011036955751478672,
+      "accuracy": 0.6175404191017151
+    },
+    {
+      "cross_entropy_loss": 1.6159863471984863,
+      "iou_score": 0.011917205527424812,
+      "accuracy": 0.6360689401626587
+    },
+    {
+      "cross_entropy_loss": 1.6209537982940674,
+      "iou_score": 0.0117815425619483,
+      "accuracy": 0.6363078951835632
+    },
+    {
+      "cross_entropy_loss": 1.611863136291504,
+      "iou_score": 0.012497933581471443,
+      "accuracy": 0.6633411049842834
+    },
+    {
+      "cross_entropy_loss": 1.605553150177002,
+      "iou_score": 0.013073819689452648,
+      "accuracy": 0.6779919862747192
+    },
+    {
+      "cross_entropy_loss": 1.5976005792617798,
+      "iou_score": 0.013186977244913578,
+      "accuracy": 0.6659230589866638
+    },
+    {
+      "cross_entropy_loss": 1.5941894054412842,
+      "iou_score": 0.012897921726107597,
+      "accuracy": 0.64784175157547
+    },
+    {
+      "cross_entropy_loss": 1.5932828187942505,
+      "iou_score": 0.013562084175646305,
+      "accuracy": 0.6688665747642517
+    },
+    {
+      "cross_entropy_loss": 1.578608512878418,
+      "iou_score": 0.013856914825737476,
+      "accuracy": 0.6597303748130798
+    },
+    {
+      "cross_entropy_loss": 1.569439172744751,
+      "iou_score": 0.014744233340024948,
+      "accuracy": 0.6825203895568848
+    },
+    {
+      "cross_entropy_loss": 1.572448492050171,
+      "iou_score": 0.015001670457422733,
+      "accuracy": 0.6928678154945374
+    },
+    {
+      "cross_entropy_loss": 1.561779499053955,
+      "iou_score": 0.016321077942848206,
+      "accuracy": 0.7160605788230896
+    },
+    {
+      "cross_entropy_loss": 1.5688672065734863,
+      "iou_score": 0.015259413979947567,
+      "accuracy": 0.6962860822677612
+    },
+    {
+      "cross_entropy_loss": 1.5621721744537354,
+      "iou_score": 0.01612326316535473,
+      "accuracy": 0.711940348148346
+    },
+    {
+      "cross_entropy_loss": 1.5592432022094727,
+      "iou_score": 0.015986071899533272,
+      "accuracy": 0.7071681618690491
+    },
+    {
+      "cross_entropy_loss": 1.5575330257415771,
+      "iou_score": 0.016425004228949547,
+      "accuracy": 0.7190515995025635
+    },
+    {
+      "cross_entropy_loss": 1.5698474645614624,
+      "iou_score": 0.01604347862303257,
+      "accuracy": 0.7192348837852478
+    },
+    {
+      "cross_entropy_loss": 1.5574514865875244,
+      "iou_score": 0.01647801883518696,
+      "accuracy": 0.7156776189804077
+    },
+    {
+      "cross_entropy_loss": 1.5512571334838867,
+      "iou_score": 0.01671149767935276,
+      "accuracy": 0.715297520160675
+    },
+    {
+      "cross_entropy_loss": 1.550539255142212,
+      "iou_score": 0.01621062494814396,
+      "accuracy": 0.7052880525588989
+    },
+    {
+      "cross_entropy_loss": 1.5470257997512817,
+      "iou_score": 0.016814205795526505,
+      "accuracy": 0.7212658524513245
+    },
+    {
+      "cross_entropy_loss": 1.547612190246582,
+      "iou_score": 0.017016367986798286,
+      "accuracy": 0.7212220430374146
+    },
+    {
+      "cross_entropy_loss": 1.5492641925811768,
+      "iou_score": 0.01644754782319069,
+      "accuracy": 0.7103631496429443
+    },
+    {
+      "cross_entropy_loss": 1.5473917722702026,
+      "iou_score": 0.016512442380189896,
+      "accuracy": 0.7097834348678589
+    },
+    {
+      "cross_entropy_loss": 1.5492008924484253,
+      "iou_score": 0.016526589170098305,
+      "accuracy": 0.7102423310279846
+    },
+    {
+      "cross_entropy_loss": 1.5575093030929565,
+      "iou_score": 0.0166032537817955,
+      "accuracy": 0.7213032841682434
+    },
+    {
+      "cross_entropy_loss": 1.541770577430725,
+      "iou_score": 0.017008483409881592,
+      "accuracy": 0.7170029878616333
+    },
+    {
+      "cross_entropy_loss": 1.548456072807312,
+      "iou_score": 0.016006113961338997,
+      "accuracy": 0.6968311667442322
+    },
+    {
+      "cross_entropy_loss": 1.558268666267395,
+      "iou_score": 0.01634085364639759,
+      "accuracy": 0.7160084843635559
+    },
+    {
+      "cross_entropy_loss": 1.5425974130630493,
+      "iou_score": 0.01778738759458065,
+      "accuracy": 0.7331216931343079
+    },
+    {
+      "cross_entropy_loss": 1.5494647026062012,
+      "iou_score": 0.016608092933893204,
+      "accuracy": 0.7126546502113342
+    },
+    {
+      "cross_entropy_loss": 1.5550692081451416,
+      "iou_score": 0.016396259889006615,
+      "accuracy": 0.7131962180137634
+    },
+    {
+      "cross_entropy_loss": 1.551231861114502,
+      "iou_score": 0.017765242606401443,
+      "accuracy": 0.7387997508049011
+    }
+  ],
+  "val_logs": [
+    {
+      "cross_entropy_loss": 1.1230874061584473,
+      "iou_score": 0.004280790686607361,
+      "accuracy": 0.4988345801830292
+    },
+    {
+      "cross_entropy_loss": 1.1166001558303833,
+      "iou_score": 0.004423507023602724,
+      "accuracy": 0.49776288866996765
+    },
+    {
+      "cross_entropy_loss": 1.118218183517456,
+      "iou_score": 0.004381461068987846,
+      "accuracy": 0.5202562212944031
+    },
+    {
+      "cross_entropy_loss": 1.1152671575546265,
+      "iou_score": 0.004555502440780401,
+      "accuracy": 0.5447932481765747
+    },
+    {
+      "cross_entropy_loss": 1.1122595071792603,
+      "iou_score": 0.004642411135137081,
+      "accuracy": 0.5527129173278809
+    },
+    {
+      "cross_entropy_loss": 1.1097931861877441,
+      "iou_score": 0.0048356796614825726,
+      "accuracy": 0.5673578977584839
+    },
+    {
+      "cross_entropy_loss": 1.1058400869369507,
+      "iou_score": 0.005127588752657175,
+      "accuracy": 0.5920124650001526
+    },
+    {
+      "cross_entropy_loss": 1.103559970855713,
+      "iou_score": 0.005220209714025259,
+      "accuracy": 0.6178305149078369
+    },
+    {
+      "cross_entropy_loss": 1.1029568910598755,
+      "iou_score": 0.005121253430843353,
+      "accuracy": 0.6391333937644958
+    },
+    {
+      "cross_entropy_loss": 1.1046321392059326,
+      "iou_score": 0.005116832442581654,
+      "accuracy": 0.670111894607544
+    },
+    {
+      "cross_entropy_loss": 1.1079440116882324,
+      "iou_score": 0.004979474935680628,
+      "accuracy": 0.6914713978767395
+    },
+    {
+      "cross_entropy_loss": 1.1070115566253662,
+      "iou_score": 0.004959263373166323,
+      "accuracy": 0.7010524868965149
+    },
+    {
+      "cross_entropy_loss": 1.1045467853546143,
+      "iou_score": 0.005228951573371887,
+      "accuracy": 0.7038673162460327
+    },
+    {
+      "cross_entropy_loss": 1.1011443138122559,
+      "iou_score": 0.005437924992293119,
+      "accuracy": 0.7024000883102417
+    },
+    {
+      "cross_entropy_loss": 1.0974509716033936,
+      "iou_score": 0.005820026621222496,
+      "accuracy": 0.7033504843711853
+    },
+    {
+      "cross_entropy_loss": 1.0951217412948608,
+      "iou_score": 0.006012387573719025,
+      "accuracy": 0.7111499905586243
+    },
+    {
+      "cross_entropy_loss": 1.093469500541687,
+      "iou_score": 0.006130665075033903,
+      "accuracy": 0.7192885875701904
+    },
+    {
+      "cross_entropy_loss": 1.0923315286636353,
+      "iou_score": 0.0062508974224328995,
+      "accuracy": 0.7288926243782043
+    },
+    {
+      "cross_entropy_loss": 1.091980218887329,
+      "iou_score": 0.00646161800250411,
+      "accuracy": 0.740468442440033
+    },
+    {
+      "cross_entropy_loss": 1.0917695760726929,
+      "iou_score": 0.00660299276933074,
+      "accuracy": 0.7478567957878113
+    },
+    {
+      "cross_entropy_loss": 1.0919088125228882,
+      "iou_score": 0.006593048572540283,
+      "accuracy": 0.753481924533844
+    },
+    {
+      "cross_entropy_loss": 1.0926034450531006,
+      "iou_score": 0.00653122691437602,
+      "accuracy": 0.7576138377189636
+    },
+    {
+      "cross_entropy_loss": 1.0930418968200684,
+      "iou_score": 0.006489698309451342,
+      "accuracy": 0.7589567303657532
+    },
+    {
+      "cross_entropy_loss": 1.0938752889633179,
+      "iou_score": 0.006381065584719181,
+      "accuracy": 0.7576037645339966
+    },
+    {
+      "cross_entropy_loss": 1.0933547019958496,
+      "iou_score": 0.006444075144827366,
+      "accuracy": 0.7586497664451599
+    },
+    {
+      "cross_entropy_loss": 1.0931153297424316,
+      "iou_score": 0.006478693801909685,
+      "accuracy": 0.7587817311286926
+    },
+    {
+      "cross_entropy_loss": 1.092740535736084,
+      "iou_score": 0.006535584572702646,
+      "accuracy": 0.759512186050415
+    },
+    {
+      "cross_entropy_loss": 1.0928696393966675,
+      "iou_score": 0.00651954859495163,
+      "accuracy": 0.7591328024864197
+    },
+    {
+      "cross_entropy_loss": 1.092973232269287,
+      "iou_score": 0.006504478864371777,
+      "accuracy": 0.7585120797157288
+    },
+    {
+      "cross_entropy_loss": 1.09287428855896,
+      "iou_score": 0.006508808583021164,
+      "accuracy": 0.7589254975318909
+    },
+    {
+      "cross_entropy_loss": 1.0928184986114502,
+      "iou_score": 0.006510674953460693,
+      "accuracy": 0.7588377594947815
+    },
+    {
+      "cross_entropy_loss": 1.0930655002593994,
+      "iou_score": 0.006456406787037849,
+      "accuracy": 0.7584037780761719
+    },
+    {
+      "cross_entropy_loss": 1.093321681022644,
+      "iou_score": 0.006422016769647598,
+      "accuracy": 0.7578992247581482
+    },
+    {
+      "cross_entropy_loss": 1.0934237241744995,
+      "iou_score": 0.006415047682821751,
+      "accuracy": 0.7580296993255615
+    },
+    {
+      "cross_entropy_loss": 1.0931568145751953,
+      "iou_score": 0.006462116725742817,
+      "accuracy": 0.7587929964065552
+    },
+    {
+      "cross_entropy_loss": 1.093475103378296,
+      "iou_score": 0.0064262100495398045,
+      "accuracy": 0.7582374811172485
+    },
+    {
+      "cross_entropy_loss": 1.0935332775115967,
+      "iou_score": 0.006426258943974972,
+      "accuracy": 0.758111834526062
+    },
+    {
+      "cross_entropy_loss": 1.0932596921920776,
+      "iou_score": 0.006452969741076231,
+      "accuracy": 0.7587544322013855
+    },
+    {
+      "cross_entropy_loss": 1.0934364795684814,
+      "iou_score": 0.00643706601113081,
+      "accuracy": 0.7582858204841614
+    },
+    {
+      "cross_entropy_loss": 1.0934115648269653,
+      "iou_score": 0.006433772388845682,
+      "accuracy": 0.7583245038986206
+    },
+    {
+      "cross_entropy_loss": 1.0931848287582397,
+      "iou_score": 0.006466052029281855,
+      "accuracy": 0.7588021755218506
+    },
+    {
+      "cross_entropy_loss": 1.0930747985839844,
+      "iou_score": 0.006467284169048071,
+      "accuracy": 0.7591137290000916
+    }
+  ]
+}
