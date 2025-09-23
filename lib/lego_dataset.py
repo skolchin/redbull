@@ -9,14 +9,12 @@ import pandas as pd
 import albumentations as A
 
 from pathlib import Path
-from joblib import Memory
 from numpy.typing import NDArray
 from torch.utils.data import Dataset
 from albumentations.pytorch.transforms import ToTensorV2
 from typing import Dict, Literal, Tuple, Annotated, TypedDict, Callable, cast, List, Any
 
 _logger = logging.getLogger(__name__)
-_cache = Memory('.cache/', verbose=0)
 
 FloatImageTensor = Annotated[ torch.Tensor, torch.float32, Literal[3, 'H', 'W'] ]
 IntImageTensor = Annotated[ torch.Tensor, torch.int64, Literal[3, 'H', 'W'] ]
@@ -47,46 +45,22 @@ class MaskTargetDict(TypedDict):
     mask_fn: str
     labels: List[int]
 
-class SynthentcLegoImagesDatasetBase(Dataset):
+class LegoDatasetBase(Dataset):
     """ Base class """
 
     CLASSES_FILE: str = 'classes.csv'
     ANNOTATION_FILE: str = 'annotation-data.csv'
 
-    _splits: Dict[str, NDArray[np.int_]] | None = None
-    _annotations: pd.DataFrame | None
+    _annotations: pd.DataFrame | None = None
+    _splits: Dict[str, pd.DataFrame] | None = None
 
     def __new__(cls, *args, **kwargs):
 
         if cls._splits is None:
             data_root = Path(kwargs.get('data_root', args[0]))
-            cls._annotations = pd.read_csv(data_root / cls.ANNOTATION_FILE)
-            ann_ids_df = cls._annotations.drop_duplicates('img_id')
-
-            if (max_size := kwargs.get('max_size')):
-                if max_size > 0:
-                    ann_ids_df = ann_ids_df.sample(n=max_size, replace=False)
-                elif max_size < 0:
-                    ann_ids_df = ann_ids_df.head(-max_size)
-
-            match (val_size := kwargs.get('val_size')):
-                case int() if val_size > 0:
-                    valid_ids_df = ann_ids_df.sample(n=int(val_size), replace=False)
-                case int() if val_size < 0:
-                    valid_ids_df = ann_ids_df.head(-val_size)
-                case int() if val_size == 0:
-                    raise ValueError(f'Invalid val_size={val_size}')
-                case float():
-                    valid_ids_df = ann_ids_df.sample(frac=float(val_size), replace=False)
-                case _:
-                    valid_ids_df = ann_ids_df.sample(frac=0.2, replace=False)
-
-            valid_ids = valid_ids_df['img_id'].unique()
-            train_ids = ann_ids_df[ ~ann_ids_df['img_id'].isin(valid_ids) ]['img_id'].unique()
-            cls._splits = {
-                'train': train_ids,
-                'valid': valid_ids
-            }
+            max_size = kwargs.get('max_size', 0)
+            val_size = kwargs.get('val_size', 0.2)
+            cls._annotations, cls._splits = cls._load_data(data_root, max_size, val_size)
         return super().__new__(cls)
 
     def __init__(self,
@@ -95,19 +69,18 @@ class SynthentcLegoImagesDatasetBase(Dataset):
                  preprocess_fn: PreprocessCallable | None = None,
                  *,
                  max_size: int = 0,
-                 val_size: int | float = 0):
+                 val_size: int | float = 0.2):
 
         super().__init__()
 
-        assert self._splits is not None
         assert self._annotations is not None
+        assert self._splits is not None
+
+        self.annotations = self._splits[split] if split else self._annotations
 
         self.data_root = Path(data_root)
-        self.annotations = self._annotations
         self.preprocess_fn = preprocess_fn
-
         self.split = split
-        self.image_ids = self._splits[split] if split else self.annotations['img_id'].unique()
 
         classes_df = pd.read_csv(self.data_root / self.CLASSES_FILE)
         self.classes = pd.Series(classes_df['label_name'].astype(str), index=classes_df['label_id'].astype(int)).to_dict()
@@ -115,10 +88,41 @@ class SynthentcLegoImagesDatasetBase(Dataset):
 
         self.transforms: A.Compose | None = None
         match split:
-            case 'train':
+            case 'train' | None:
                 self.transforms = self.get_transform_train(self.preprocess_fn)
             case 'valid':
                 self.transforms = self.get_transform_valid(self.preprocess_fn)
+
+    @classmethod
+    def _load_data(cls,
+                   data_root: str | Path, 
+                   max_size: int = 0, 
+                   val_size: int | float = 0.2) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        
+        annotations = pd.read_csv(Path(data_root) / cls.ANNOTATION_FILE)
+        unique_ids = annotations.drop_duplicates('img_id')
+
+        if max_size > 0:
+            unique_ids = unique_ids.sample(n=max_size, replace=False)
+        elif max_size < 0:
+            unique_ids = unique_ids.head(-max_size)
+
+        match val_size:
+            case int() if val_size > 0:
+                valid_ids = unique_ids.sample(n=int(val_size), replace=False)
+            case int() if val_size < 0:
+                valid_ids = unique_ids.head(-val_size)
+            case int() if val_size == 0:
+                raise ValueError(f'Invalid val_size={val_size}')
+            case float():
+                valid_ids = unique_ids.sample(frac=float(val_size), replace=False)
+            case _:
+                valid_ids = unique_ids.sample(frac=0.2, replace=False)
+
+        ann_valid = annotations[ annotations['img_id'].isin(valid_ids['img_id'].unique()) ]
+        ann_train = annotations[ ~annotations['img_id'].isin(valid_ids['img_id'].unique()) ]
+
+        return annotations, { 'train': ann_train, 'valid': ann_valid }
 
     def get_transform_train(self, preprocess_fn: PreprocessCallable | None) -> A.Compose:
         raise NotImplementedError('Not implemented')
@@ -126,24 +130,21 @@ class SynthentcLegoImagesDatasetBase(Dataset):
     def get_transform_valid(self, preprocess_fn: PreprocessCallable | None) -> A.Compose:
         raise NotImplementedError('Not implemented')
 
-ImageDatasetReturnT = FloatImageTensor | Tuple[FloatImageTensor, ImageTargetDict]
-
-class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
-    """ Dataset object for Synthetic Lego images """
+class LegoDataset(LegoDatasetBase):
+    """ Dataset of Synthetic Lego images """
 
     def __init__(self,
                  data_root: Path | str,
                  split: Literal['train', 'valid'] | None = None,
                  preprocess_fn: PreprocessCallable | None = None,
-                 with_target: bool = True,
                  *,
                  max_size: int = 0,
                  val_size: int | float = 0):
 
         super().__init__(data_root, split, preprocess_fn, max_size=max_size, val_size=val_size)
-        self.with_target = with_target
+        self.image_ids = self.annotations['img_id'].unique()
 
-    def _get(self, index: int | str) -> ImageDatasetReturnT:
+    def _get(self, index: int | str) -> Tuple[FloatImageTensor, ImageTargetDict]:
         """ Get implementation """
         image_id = self.image_ids[index] if isinstance(index, int) else index
         records = self.annotations[self.annotations['img_id'] == image_id]
@@ -166,7 +167,8 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
         area = torch.as_tensor(area, dtype=torch.float32)
         boxes = torch.as_tensor(boxes, dtype=torch.int64)
 
-        labels = torch.as_tensor(records['labels'].values, dtype=torch.float32)
+        labels = records['labels'].values
+        # labels = torch.as_tensor(records['labels'].values, dtype=torch.float32)
 
         # suppose all instances are not crowd
         iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
@@ -178,7 +180,7 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
             sample = {
                 'image': image,
                 'bboxes': boxes,
-                # 'labels': labels,
+                'labels': labels,
             }
             sample = self.transforms(**sample)
             image = sample['image']
@@ -187,28 +189,32 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
         if self.preprocess_fn:
             image = self.preprocess_fn(image)
 
-        if self.with_target:
-            return image, ImageTargetDict(
-                image_id=int(records.index.min()),
-                image_fn=str(image_fn),
-                boxes=boxes,
-                labels=labels,
-                area=area,
-                iscrowd=iscrowd,
-            )
-       
-        return image
+        return image, ImageTargetDict(
+            image_id=int(records.index.min()),
+            image_fn=str(image_fn),
+            boxes=boxes,
+            labels=torch.as_tensor(labels, dtype=torch.float32),
+            area=area,
+            iscrowd=iscrowd,
+        )
 
-    def get(self, index: int | str) -> ImageDatasetReturnT | None:
+    def get(self, index: int | str) -> FloatImageTensor | None:
+        """ Get an entry """
+        try:
+            return self._get(index)[0]
+        except (KeyError, FileNotFoundError):
+            return None
+
+    def get_with_target(self, index: int | str) -> Tuple[FloatImageTensor, ImageTargetDict] | None:
         """ Get an entry """
         try:
             return self._get(index)
         except (KeyError, FileNotFoundError):
             return None
 
-    def __getitem__(self, index: int | str) -> ImageDatasetReturnT:
+    def __getitem__(self, index: int | str) -> FloatImageTensor:
         """ Indexing """
-        return self._get(index)
+        return self._get(index)[0]
 
     def __iter__(self):
         """ Iteration """
@@ -217,10 +223,9 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
 
     def __len__(self) -> int:
         """ Length """
-        return self.image_ids.shape[0]
+        return len(self.image_ids)
 
     def get_transform_train(self, preprocess_fn: PreprocessCallable | None) -> A.Compose:
-
         transforms = []
 
         if preprocess_fn:
@@ -232,6 +237,7 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
             A.ToFloat(255.0, p=1.0),
             ToTensorV2(transpose_mask=True, p=1.0),
         ])
+
         return A.Compose(
             transforms, 
             bbox_params={
@@ -240,7 +246,6 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
             )
 
     def get_transform_valid(self, preprocess_fn: PreprocessCallable | None) -> A.Compose:
-
         transforms = []
 
         if preprocess_fn:
@@ -250,6 +255,7 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
             A.ToFloat(255.0, p=1.0),
             ToTensorV2(transpose_mask=True, p=1.0),
         ])
+
         return A.Compose(
             transforms, 
             bbox_params={
@@ -257,10 +263,8 @@ class SynthentcLegoImagesDataset(SynthentcLegoImagesDatasetBase):
                 'label_fields': ['labels']}
             )
 
-MaskDatasetReturnT =  Tuple[FloatImageTensor, IntMaskTensor] | Tuple[FloatImageTensor, IntMaskTensor, MaskTargetDict]
-
-class SynthentcLegoImagesWithMasksDataset(SynthentcLegoImagesDatasetBase):
-    """ Dataset object for Synthetic Lego images with segmentation masks """
+class LegoWithMasksDataset(LegoDatasetBase):
+    """ Dataset of Synthetic Lego images with segmentation masks """
 
     ANNOTATION_DEFS_FILE: str = 'annotation-jsons/annotation_definitions.json'
     SEMANTIC_SEGMENTATION_DIR: str = 'semantic-segmentation'
@@ -272,19 +276,10 @@ class SynthentcLegoImagesWithMasksDataset(SynthentcLegoImagesDatasetBase):
                  with_cache: bool = True,
                  *,
                  max_size: int = 0,
-                 val_size: int | float = 0):
+                 val_size: int | float = 0.2):
         
         super().__init__(data_root, split, preprocess_fn, max_size=max_size, val_size=val_size)
         self.with_cache = with_cache
-
-        if split:
-            assert self._annotations is not None
-            self.annotations = self._annotations[ self._annotations['img_id'].isin(self.image_ids) ]
-
-        # self.annotations = self.annotations.explode('labels', ignore_index=True)
-        self.annotations = self.annotations.groupby(['img_id','width','height']) \
-            .agg(labels=pd.NamedAgg('labels', lambda x: set(x.tolist()))) \
-            .reset_index()
 
         ann_defs = json.loads((self.data_root / self.ANNOTATION_DEFS_FILE).read_text())
         segm_defs = [x for x in ann_defs['annotation_definitions'] if x['name'] == 'semantic segmentation']
@@ -296,8 +291,39 @@ class SynthentcLegoImagesWithMasksDataset(SynthentcLegoImagesDatasetBase):
         label_to_id_mapping = {v: k for k, v in self.classes.items()}
         self.class_colors = {label_to_id_mapping[spec['label_name']]: to_clr(spec['pixel_value']) for spec in segm_defs[0]['spec']}
 
-        if self.with_cache:
-            self._get = _cache.cache(self._get) #type:ignore
+    @classmethod
+    def _load_data(cls, 
+                   data_root: str | Path, 
+                   max_size: int = 0, 
+                   val_size: int | float = 0.2) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        
+        annotations = pd.read_csv(Path(data_root) / cls.ANNOTATION_FILE) \
+            .groupby(['img_id','width','height']) \
+            .agg(labels=pd.NamedAgg('labels', lambda x: set(x.tolist()))) \
+            .reset_index()
+        
+        unique_ids = annotations
+
+        if max_size > 0:
+            unique_ids = unique_ids.sample(n=max_size, replace=False)
+        elif max_size < 0:
+            unique_ids = unique_ids.head(-max_size)
+
+        match val_size:
+            case int() if val_size > 0:
+                ann_valid = unique_ids.sample(n=int(val_size), replace=False)
+            case int() if val_size < 0:
+                ann_valid = unique_ids.head(-val_size)
+            case int() if val_size == 0:
+                raise ValueError(f'Invalid val_size={val_size}')
+            case float():
+                ann_valid = unique_ids.sample(frac=float(val_size), replace=False)
+            case _:
+                ann_valid = unique_ids.sample(frac=0.2, replace=False)
+
+        ann_train = unique_ids[ ~unique_ids['img_id'].isin(ann_valid['img_id'].unique()) ]
+
+        return annotations, { 'train': ann_train, 'valid': ann_valid }
 
     def _get(self, index: int) -> Tuple[FloatImageTensor, IntMaskTensor, MaskTargetDict]:
         """ Get implementation """
@@ -377,15 +403,6 @@ class SynthentcLegoImagesWithMasksDataset(SynthentcLegoImagesDatasetBase):
         """ Indexing """
         return self._get(index)[:2]
 
-    # def __iter__(self):
-    #     """ Iteration """
-    #     for row in self.annotations.itertuples(index=True):
-    #         yield self._get(row.Index) # type:ignore
-
-    # def __len__(self) -> int:
-    #     """ Length """
-    #     return len(self.annotations)
-    
     def __iter__(self):
         """ Iteration """
         for i in range(len(self)):
@@ -393,7 +410,7 @@ class SynthentcLegoImagesWithMasksDataset(SynthentcLegoImagesDatasetBase):
 
     def __len__(self) -> int:
         """ Length """
-        return self.image_ids.shape[0]
+        return self.annotations.shape[0]
     
     def get_transform_train(self, preprocess_fn: PreprocessCallable | None) -> A.Compose:
 

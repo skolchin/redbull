@@ -14,7 +14,7 @@ from typing import List
 warnings.simplefilter('ignore', DeprecationWarning)
 
 from lib.videoreader import VideoReader
-from lib.lego_dataset import SynthentcLegoImagesWithMasksDataset
+from lib.lego_dataset import LegoWithMasksDataset
 
 DEVICE_CUDA = 'cuda'
 DEVICE_CPU = 'cpu'
@@ -33,7 +33,7 @@ def get_vis_augmentation():
 def process_frame(
         image, 
         model, 
-        dataset: SynthentcLegoImagesWithMasksDataset, 
+        dataset: LegoWithMasksDataset, 
         display_labels: List[int] | None, 
         device: torch.device,
         threshold: float):
@@ -52,14 +52,12 @@ def process_frame(
     output_mask_image = output_aug_image.copy()
 
     for label in (display_labels or list(dataset.classes.keys())):
-        if label > 0:
-            color = dataset.class_colors[label]
-            # color = (0,0,1)
-            m = pred_mask[:,:, label].squeeze()
-            m_idx = m >= threshold
-            output_mask_image[m_idx] = output_mask_image[m_idx]*0.6 + np.array(color)*0.4
-        if label > 10:
-            break
+        # color = dataset.class_colors[label]
+        color = (1,0,0)
+        m = pred_mask[:,:, label].squeeze()
+        m_idx = m >= threshold
+        # output_mask_image[m_idx] = (output_mask_image[m_idx]*0.6 + np.array(color)*0.4)
+        output_mask_image[m_idx] = np.array(color)
 
     return output_aug_image, output_mask_image
 
@@ -101,13 +99,13 @@ def main(
 
     device = torch.device(DEVICE_CUDA if not use_cpu else DEVICE_CPU)
     preprocessing_fn = smp.encoders.get_preprocessing_fn(ENCODER, ENCODER_WEIGHTS)
-    dataset = SynthentcLegoImagesWithMasksDataset(
+    dataset = LegoWithMasksDataset(
         data_dir,
         'valid',
         preprocess_fn=preprocessing_fn,
     )
     
-    best_name = str(Path(save_dir).joinpath('deeplabv3plus_best.pth'))
+    best_name = str(Path(save_dir).joinpath('lego_masked_best.pth'))
     best_model = torch.load(best_name, weights_only=False)
 
     if not class_filter:

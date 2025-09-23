@@ -12,13 +12,13 @@ import segmentation_models_pytorch.utils as smp_utils
 from pathlib import Path
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
-from lib.lego_dataset import SynthentcLegoImagesWithMasksDataset
+from lib.lego_dataset import LegoWithMasksDataset
 
 # json_numpy.patch()
 
 DEVICE_CUDA = 'cuda'
 DEVICE_CPU = 'cpu'
-ENCODER = 'resnet34'
+ENCODER = 'resnet101'
 ENCODER_WEIGHTS = 'imagenet'
 ACTIVATION = 'sigmoid'
 PATIENCE = 5
@@ -29,9 +29,6 @@ LR_MINIMAL = 1e-5
 MAX_PLATEAU_PERIODS = 3
 MIN_SCORE_CHANGE = 1e-3
 APPLY_LR_DECAY_EPOCH = 30
-
-def collate_fn(batch):
-    return tuple(zip(*batch))
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('lib.lego_dataset').setLevel(logging.ERROR)
@@ -44,48 +41,48 @@ def numpy_serializer(obj):
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 @click.command
-@click.option('-n', '--epochs', type=click.IntRange(1, 10000), 
+@click.option('-n', '--epochs', type=click.IntRange(1, 10000),
               default=10, show_default=True,
               help='Number of epoch to train')
-@click.option('-i', '--image_count',type=int, 
+@click.option('-i', '--image_count',type=int,
               default=10, show_default=True,
               help='Maximum number of images to be processed (=0 - all)')
 @click.option('--use_cpu', is_flag=True,
               help='Run training on CPU (much slower)')
 @click.option('-d', '--data_dir',
-              type=click.Path(exists=True, file_okay=False, dir_okay=True), 
+              type=click.Path(exists=True, file_okay=False, dir_okay=True),
               default='./datasets/synthetic-lego-images/versions/4/', show_default=True,
               help='Dataset root')
-@click.option('-v', '--val-size',type=float, 
+@click.option('-v', '--val-size',type=float,
               default=0.2, show_default=True,
               help='Validation-to-train split ratio')
 @click.option('-s', '--save_dir',
-              type=click.Path(exists=True, file_okay=False, dir_okay=True), 
+              type=click.Path(exists=True, file_okay=False, dir_okay=True),
               default='./weights/', show_default=True,
               help='Weights directory')
 def main(
-    epochs: int, 
-    image_count: int, 
-    use_cpu: bool, 
-    data_dir: str, 
-    val_size: float, 
+    epochs: int,
+    image_count: int,
+    use_cpu: bool,
+    data_dir: str,
+    val_size: float,
     save_dir: str):
     """ Training script """
 
     device = DEVICE_CUDA if not use_cpu else DEVICE_CPU
     preprocessing_fn = smp.encoders.get_preprocessing_fn(ENCODER, ENCODER_WEIGHTS)
 
-    train_dataset = SynthentcLegoImagesWithMasksDataset(
-        data_dir, 
-        'train', 
+    train_dataset = LegoWithMasksDataset(
+        data_dir,
+        split='train',
         preprocess_fn=preprocessing_fn,
         max_size=image_count,
         val_size=val_size,
         with_cache=False,
     )
-    val_dataset = SynthentcLegoImagesWithMasksDataset(
-        data_dir, 
-        'valid', 
+    val_dataset = LegoWithMasksDataset(
+        data_dir,
+        split='valid',
         preprocess_fn=preprocessing_fn,
         with_cache=False,
     )
@@ -102,25 +99,36 @@ def main(
     # plt.show()
 
     train_loader = DataLoader(
-        train_dataset, 
-        batch_size=16, 
+        train_dataset,
+        batch_size=16,
         shuffle=False,
     )
     val_loader = DataLoader(
-        val_dataset, 
-        batch_size=16, 
+        val_dataset,
+        batch_size=16,
         shuffle=False,
     )
 
-    model = smp.FPN(
+    model = smp.DeepLabV3Plus(
         encoder_name=ENCODER,
         encoder_weights=ENCODER_WEIGHTS,
         activation=ACTIVATION,
         classes=len(train_dataset.classes),
+        aux_params={
+            'classes': len(train_dataset.classes),
+            'activation': ACTIVATION,
+            'dropout': 0.2,
+        }
     ).to(device)
 
     loss = smp_utils.losses.CrossEntropyLoss().to(device)
-    # loss = smp_utils.losses.DiceLoss().to(device)
+
+    # loss = smp.losses.DiceLoss(
+    #     mode='multilabel',
+    #     classes=list(train_dataset.classes.keys()),
+    # ).to(device)
+    # setattr(loss, '__name__', 'dice_loss')
+
     metrics = [
         smp_utils.metrics.IoU(threshold=0.5).to(device),
         smp_utils.metrics.Accuracy(threshold=0.5).to(device),
@@ -132,24 +140,24 @@ def main(
     ])
 
     train_epoch = smp_utils.train.TrainEpoch(
-        model, 
-        loss=loss, 
-        metrics=metrics, 
+        model,
+        loss=loss,
+        metrics=metrics,
         optimizer=optimizer,
         device=device,
         verbose=True,
     )
     val_epoch = smp_utils.train.ValidEpoch(
-        model, 
-        loss=loss, 
-        metrics=metrics, 
+        model,
+        loss=loss,
+        metrics=metrics,
         device=device,
         verbose=True,
     )
 
     Path(save_dir).mkdir(exist_ok=True)
-    save_name = str(Path(save_dir).joinpath('deeplabv3plus.pth'))
-    save_name_best = str(Path(save_dir).joinpath('deeplabv3plus_best.pth'))
+    save_name = str(Path(save_dir).joinpath('lego_masked.pth'))
+    save_name_best = str(Path(save_dir).joinpath('lego_masked_best.pth'))
 
     min_score = 100
     min_score_epoch = epochs
@@ -169,10 +177,11 @@ def main(
 
         train_logs = train_epoch.run(train_loader)
         valid_logs = val_epoch.run(val_loader)
+
         train_logs_list.append(train_logs)
         valid_logs_list.append(valid_logs)
-        
-        score = valid_logs['cross_entropy_loss']
+
+        score = valid_logs['dice_loss']
         if score < min_score - MIN_SCORE_CHANGE:
             # score decreased
             min_score = score
@@ -201,7 +210,7 @@ def main(
         torch.save(model, save_name)
 
     if epoch > 0:
-        Path(save_dir).joinpath('deeplabv3plus_train.json').write_text(
+        Path(save_dir).joinpath('lego_masked_log.json').write_text(
             json.dumps({
                     'train_files': train_dataset.annotations["img_id"].unique().tolist(),
                     'val_files': val_dataset.annotations["img_id"].unique().tolist(),
